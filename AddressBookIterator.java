@@ -187,6 +187,7 @@ class Address{
 
     @Override
     public boolean equals(Object o){
+		if(o == null) return false;
         if(o == this)return true;
         if(!(o instanceof Address))return false;
         Address a = (Address)o;
