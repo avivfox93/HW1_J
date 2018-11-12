@@ -198,7 +198,7 @@ class Address{
     }
     @Override
     public int hashCode(){
-        return (this.name + this.street + this.city + this.state).hashCode();
+        return this.name.hashCode() + this.street.hashCode() + this.city.hashCode() + this.state.hashCode() + 31*getZip();
     }
     @Override
     public String toString(){
