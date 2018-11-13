@@ -5,6 +5,7 @@ import java.util.NoSuchElementException;
 
 public class AddressBookIterator implements ListIterator<Address> {
     private RandomAccessFile raf;
+    private long pos = 0;
     private long lastReturned = -1;
     private boolean next;
     private static final int RECORD_SIZE = (CommandButton.RECORD_SIZE*2);
@@ -14,7 +15,7 @@ public class AddressBookIterator implements ListIterator<Address> {
     @Override
     public boolean hasNext() {
         try {
-            return (raf.length() > raf.getFilePointer());
+            return (raf.length() > this.pos);
         }catch (IOException ex){
             ex.printStackTrace();
             return false;
@@ -24,8 +25,10 @@ public class AddressBookIterator implements ListIterator<Address> {
     @Override
     public Address next() {
         try {
-            if(this.raf.getFilePointer() == this.raf.length()) throw new NoSuchElementException();
+            if(this.pos == this.raf.length()) throw new NoSuchElementException();
             this.next = true;
+            this.raf.seek(this.pos);
+            this.pos += RECORD_SIZE;
             this.lastReturned = this.raf.getFilePointer();
             return new Address(this.raf);
         }catch(IOException ex) {
@@ -36,12 +39,7 @@ public class AddressBookIterator implements ListIterator<Address> {
 
     @Override
     public boolean hasPrevious() {
-        try {
-            return raf.getFilePointer() > 0;
-        }catch(IOException ex){
-            ex.printStackTrace();
-            return false;
-        }
+        return this.pos > 0;
     }
 
     @Override
@@ -53,7 +51,7 @@ public class AddressBookIterator implements ListIterator<Address> {
             this.lastReturned = prev;
             this.raf.seek(prev);
             Address a = new Address(raf);
-            this.raf.seek(prev);
+            this.pos -= RECORD_SIZE;
             return a;
         }catch (IOException ex) {
             ex.printStackTrace();
@@ -94,7 +92,7 @@ public class AddressBookIterator implements ListIterator<Address> {
             this.raf.seek(this.lastReturned);
             this.raf.write(arr);
             this.raf.setLength(newSize);
-            this.raf.seek(this.lastReturned);
+            this.pos = this.lastReturned;
             this.lastReturned = -1;
         }catch (IOException ex){
             ex.printStackTrace();
@@ -104,7 +102,8 @@ public class AddressBookIterator implements ListIterator<Address> {
     @Override
     public void set(Address o) {
         try{
-            this.raf.seek(this.raf.getFilePointer() - RECORD_SIZE);
+            if(lastReturned == -1) throw new IllegalStateException();
+            this.raf.seek(this.lastReturned - RECORD_SIZE);
             Address.writeToFile(o,raf);
         }catch (IOException ex){
             ex.printStackTrace();
@@ -114,18 +113,18 @@ public class AddressBookIterator implements ListIterator<Address> {
     @Override
     public void add(Address o) {
         try{
-            long pos = this.raf.getFilePointer();
+            this.raf.seek(this.pos);
             if(this.raf.length() == 0){
                 Address.writeToFile(o,this.raf);
-                this.raf.seek(pos);
+                this.pos += RECORD_SIZE;
                 return;
             }
             byte[] arr = new byte[(int)(this.raf.length() - pos)];
             this.raf.read(arr);
-            this.raf.seek(pos);
+            this.raf.seek(this.pos);
+            this.pos += RECORD_SIZE;
             Address.writeToFile(o,this.raf);
             this.raf.write(arr);
-            this.raf.seek(pos);
         }catch (IOException ex){
             ex.printStackTrace();
         }
