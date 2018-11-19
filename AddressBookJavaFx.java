@@ -362,20 +362,7 @@ class Sort1Button extends CommandButton{
     }
     @Override
     public void Execute(){
-        this.sort((i,j)->{
-            try{
-                raf.seek(i*2*RECORD_SIZE);
-                String first =
-                        FixedLengthStringIO.readFixedLengthString(NAME_SIZE, raf);
-                raf.seek(j*2*RECORD_SIZE);
-                String second =
-                        FixedLengthStringIO.readFixedLengthString(NAME_SIZE, raf);
-                return first.compareTo(second);
-            }catch (IOException ex){
-                ex.printStackTrace();
-            }
-            return 0;
-        });
+        this.sort(new MyComperator(MyComperator.BY_NAME,this.raf));
     }
 }
 class Sort2Button extends CommandButton{
@@ -385,20 +372,7 @@ class Sort2Button extends CommandButton{
     }
     @Override
     public void Execute(){
-        this.sort((i,j)->{
-            try{
-                raf.seek((i+1)*2*RECORD_SIZE - 2*ZIP_SIZE);
-                int first =
-                        Integer.valueOf(FixedLengthStringIO.readFixedLengthString(ZIP_SIZE, raf).trim());
-                raf.seek((j+1)*2*RECORD_SIZE - 2*ZIP_SIZE);
-                int second =
-                        Integer.valueOf(FixedLengthStringIO.readFixedLengthString(ZIP_SIZE, raf).trim());
-                return first - second;
-            }catch (IOException ex){
-                ex.printStackTrace();
-            }
-            return 0;
-        });
+        this.sort(new MyComperator(MyComperator.BY_ZIP,this.raf));
     }
 }
 class IterButton extends CommandButton{
@@ -440,5 +414,53 @@ class IterButton extends CommandButton{
         }catch (IOException ex){
             ex.printStackTrace();
         }
+    }
+}
+
+class MyComperator implements Comparator<Integer>{
+    private Comparator<Integer> comp;
+    public static final String BY_NAME = "NAME";
+    public static final String BY_ZIP = "ZIP";
+    public MyComperator(String type, RandomAccessFile raf){
+        switch (type){
+            case BY_NAME:
+                comp = (i,j)->{
+                    try{
+                        raf.seek(i*2*CommandButton.RECORD_SIZE);
+                        String first =
+                                FixedLengthStringIO.readFixedLengthString(CommandButton.NAME_SIZE, raf);
+                        raf.seek(j*2*CommandButton.RECORD_SIZE);
+                        String second =
+                                FixedLengthStringIO.readFixedLengthString(CommandButton.NAME_SIZE, raf);
+                        return first.compareTo(second);
+                    }catch (IOException ex){
+                        ex.printStackTrace();
+                    }
+                    return 0;
+                };
+                break;
+            case BY_ZIP:
+                comp = (i,j)->{
+                    try{
+                        raf.seek((i+1)*2*CommandButton.RECORD_SIZE - 2*CommandButton.ZIP_SIZE);
+                        int first =
+                                Integer.valueOf(FixedLengthStringIO.readFixedLengthString(CommandButton.ZIP_SIZE, raf).trim());
+                        raf.seek((j+1)*2*CommandButton.RECORD_SIZE - 2*CommandButton.ZIP_SIZE);
+                        int second =
+                                Integer.valueOf(FixedLengthStringIO.readFixedLengthString(CommandButton.ZIP_SIZE, raf).trim());
+                        return first - second;
+                    }catch (IOException ex){
+                        ex.printStackTrace();
+                    }
+                    return 0;
+                };
+                break;
+            default:
+                comp = Comparator.comparingInt(i -> i);
+        }
+    }
+    @Override
+    public int compare(Integer o1, Integer o2) {
+        return comp.compare(o1,o2);
     }
 }

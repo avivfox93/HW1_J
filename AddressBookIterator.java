@@ -88,6 +88,7 @@ public class AddressBookIterator implements ListIterator<Address> {
             long newSize = this.raf.length() - RECORD_SIZE;
             byte[] arr = new byte[size];
             if(!this.next)this.raf.seek(lastReturned + RECORD_SIZE);
+            else this.raf.seek(pos);
             this.raf.read(arr);
             this.raf.seek(this.lastReturned);
             this.raf.write(arr);
