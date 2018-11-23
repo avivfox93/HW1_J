@@ -64,23 +64,12 @@ public class AddressBookIterator {
 
             @Override
             public int nextIndex() {
-                try {
-                    return (int) raf.getFilePointer() / RECORD_SIZE + 1;
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    return 0;
-                }
+                return (int)(this.pos / RECORD_SIZE) + 1;
             }
 
             @Override
             public int previousIndex() {
-                try {
-                    if (raf.getFilePointer() == 0) throw new IOException();
-                    return (int) raf.getFilePointer() / RECORD_SIZE - 1;
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    return -1;
-                }
+                return (int)(pos / RECORD_SIZE) - 1;
             }
 
             @Override
