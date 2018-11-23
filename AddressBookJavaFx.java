@@ -376,7 +376,7 @@ class Sort2Button extends CommandButton{
     }
 }
 class IterButton extends CommandButton{
-    ListIterator<Address> lit = new AddressBookIterator(this.raf);
+    ListIterator<Address> lit = new AddressBookIterator(this.raf).iterator();
     Map<Address,Integer> map = new HashMap<>();
     public IterButton(AddressBookPane pane, RandomAccessFile r){
         super(pane,r);
@@ -406,7 +406,8 @@ class IterButton extends CommandButton{
                 else return res;
             });
             treeSet.addAll(map.keySet());
-            lit.forEachRemaining((a)-> lit.remove());
+            while(lit.hasPrevious())lit.previous();
+            lit.forEachRemaining(a->lit.remove());
             treeSet.forEach(lit::add);
         }
         try {

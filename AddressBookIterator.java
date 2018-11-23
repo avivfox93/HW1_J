@@ -3,135 +3,139 @@ import java.io.RandomAccessFile;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-public class AddressBookIterator implements ListIterator<Address> {
+public class AddressBookIterator {
     private RandomAccessFile raf;
-    private long pos = 0;
-    private long lastReturned = -1;
-    private boolean next;
-    private static final int RECORD_SIZE = (CommandButton.RECORD_SIZE*2);
-    public AddressBookIterator(RandomAccessFile raf){
+    private static final int RECORD_SIZE = (CommandButton.RECORD_SIZE * 2);
+    public AddressBookIterator(RandomAccessFile raf) {
         this.raf = raf;
     }
-    @Override
-    public boolean hasNext() {
-        try {
-            return (raf.length() > this.pos);
-        }catch (IOException ex){
-            ex.printStackTrace();
-            return false;
-        }
-    }
+    public ListIterator<Address> iterator() {
+        return new ListIterator<>() {
+            private long pos = 0;
+            private long lastReturned = -1;
+            private boolean next;
 
-    @Override
-    public Address next() {
-        try {
-            if(this.pos == this.raf.length()) throw new NoSuchElementException();
-            this.next = true;
-            this.raf.seek(this.pos);
-            this.pos += RECORD_SIZE;
-            this.lastReturned = this.raf.getFilePointer();
-            return new Address(this.raf);
-        }catch(IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    @Override
-    public boolean hasPrevious() {
-        return this.pos > 0;
-    }
-
-    @Override
-    public Address previous() throws NoSuchElementException {
-        try {
-            this.next = false;
-            if(this.raf.getFilePointer() == 0) throw new NoSuchElementException();
-            long prev = this.raf.getFilePointer() - RECORD_SIZE;
-            this.lastReturned = prev;
-            this.raf.seek(prev);
-            Address a = new Address(raf);
-            this.pos -= RECORD_SIZE;
-            return a;
-        }catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    @Override
-    public int nextIndex() {
-        try {
-            return (int) this.raf.getFilePointer()/RECORD_SIZE + 1;
-        }catch (IOException ex) {
-            ex.printStackTrace();
-            return 0;
-        }
-    }
-
-    @Override
-    public int previousIndex() {
-        try {
-            if(this.raf.getFilePointer() == 0) throw new IOException();
-            return (int) this.raf.getFilePointer()/RECORD_SIZE - 1;
-        }catch (IOException ex) {
-            ex.printStackTrace();
-            return -1;
-        }
-    }
-
-    @Override
-    public void remove() throws IllegalStateException {
-        try {
-            if(this.raf.length() == 0 || this.lastReturned == -1)throw new IllegalStateException();
-            int size = (int)(this.raf.length() - lastReturned);
-            long newSize = this.raf.length() - RECORD_SIZE;
-            byte[] arr = new byte[size];
-            if(!this.next)this.raf.seek(lastReturned + RECORD_SIZE);
-            else this.raf.seek(pos);
-            this.raf.read(arr);
-            this.raf.seek(this.lastReturned);
-            this.raf.write(arr);
-            this.raf.setLength(newSize);
-            this.pos = this.lastReturned;
-            this.lastReturned = -1;
-        }catch (IOException ex){
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    public void set(Address o) {
-        try{
-            if(lastReturned == -1) throw new IllegalStateException();
-            this.raf.seek(this.lastReturned - RECORD_SIZE);
-            Address.writeToFile(o,raf);
-        }catch (IOException ex){
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    public void add(Address o) {
-        try{
-            this.raf.seek(this.pos);
-            if(this.raf.length() == 0){
-                Address.writeToFile(o,this.raf);
-                this.pos += RECORD_SIZE;
-                return;
+            @Override
+            public boolean hasNext() {
+                try {
+                    return (raf.length() > this.pos);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
             }
-            byte[] arr = new byte[(int)(this.raf.length() - pos)];
-            this.raf.read(arr);
-            this.raf.seek(this.pos);
-            this.pos += RECORD_SIZE;
-            Address.writeToFile(o,this.raf);
-            this.raf.write(arr);
-        }catch (IOException ex){
-            ex.printStackTrace();
-        }
+
+            @Override
+            public Address next() {
+                try {
+                    if (this.pos == raf.length()) throw new NoSuchElementException();
+                    this.next = true;
+                    raf.seek(this.pos);
+                    this.pos += RECORD_SIZE;
+                    this.lastReturned = raf.getFilePointer();
+                    return new Address(raf);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return null;
+                }
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return this.pos > RECORD_SIZE;
+            }
+
+            @Override
+            public Address previous() throws NoSuchElementException {
+                try {
+                    this.next = false;
+                    if (this.pos == 0) throw new NoSuchElementException();
+                    long prev = this.pos - RECORD_SIZE;
+                    this.lastReturned = prev;
+                    raf.seek(prev);
+                    Address a = new Address(raf);
+                    this.pos -= RECORD_SIZE;
+                    return a;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return null;
+                }
+            }
+
+            @Override
+            public int nextIndex() {
+                try {
+                    return (int) raf.getFilePointer() / RECORD_SIZE + 1;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return 0;
+                }
+            }
+
+            @Override
+            public int previousIndex() {
+                try {
+                    if (raf.getFilePointer() == 0) throw new IOException();
+                    return (int) raf.getFilePointer() / RECORD_SIZE - 1;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return -1;
+                }
+            }
+
+            @Override
+            public void remove() throws IllegalStateException {
+                try {
+                    if (raf.length() == 0 || this.lastReturned == -1) throw new IllegalStateException();
+                    int size = (int) (raf.length() - lastReturned);
+                    long newSize = raf.length() - RECORD_SIZE;
+                    byte[] arr = new byte[size];
+                    if (!this.next) raf.seek(lastReturned + RECORD_SIZE);
+                    else raf.seek(pos);
+                    raf.read(arr);
+                    raf.seek(this.lastReturned);
+                    raf.write(arr);
+                    raf.setLength(newSize);
+                    this.pos = this.lastReturned;
+                    this.lastReturned = -1;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void set(Address o) {
+                try {
+                    if (lastReturned == -1) throw new IllegalStateException();
+                    raf.seek(this.lastReturned - RECORD_SIZE);
+                    Address.writeToFile(o, raf);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void add(Address o) {
+                try {
+                    raf.seek(this.pos);
+                    if (raf.length() == 0) {
+                        Address.writeToFile(o, raf);
+                        this.pos += RECORD_SIZE;
+                        return;
+                    }
+                    byte[] arr = new byte[(int) (raf.length() - pos)];
+                    raf.read(arr);
+                    raf.seek(this.pos);
+                    this.pos += RECORD_SIZE;
+                    Address.writeToFile(o, raf);
+                    raf.write(arr);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        };
     }
 }
-
 class Address{
     private String name,street,city,state;
     private int zip;
@@ -198,7 +202,7 @@ class Address{
     }
     @Override
     public int hashCode(){
-        return this.name.hashCode() + this.street.hashCode() + this.city.hashCode() + this.state.hashCode() + 31*getZip();
+        return this.name.hashCode() + this.street.hashCode() + this.city.hashCode() + this.state.hashCode();
     }
     @Override
     public String toString(){
