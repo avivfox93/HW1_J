@@ -401,8 +401,8 @@ class IterButton extends CommandButton{
             });
         }else{
             TreeSet<Address> treeSet = new TreeSet<>((i,j)->{
-                int res = j.getStreet().compareTo(i.getStreet());
-                if(res == 0) return j.toString().compareTo(i.toString());
+                int res = i.getStreet().compareTo(j.getStreet());
+                if(res == 0) return i.toString().compareTo(j.toString());
                 else return res;
             });
             treeSet.addAll(map.keySet());
